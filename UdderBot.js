@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const fathai95OauthKey = process.env.FATHAI95_OAUTH_KEY;
 const uddertasticOauthKey = process.env.UDDERTASTIC_OAUTH_KEY;
 
@@ -27,7 +27,7 @@ const client2 = new tmi.Client(bot2Config);
 const randomDelay = Math.random() * 1700 + 200; //delay between 200ms and 1300ms seconds
 var Bot1Hunt = 1;
 var Bot1Fight = 1;
-let udderBet=0;
+let udderBet = 0;
 function getRandomDelay() {
   return Math.random() * 1100 + 200; // Generate random delay between 200ms and 1300ms
 }
@@ -122,18 +122,18 @@ client1.on("message", async (channel, userstate, message, self) => {
     await delay(200);
     client1.say(channel, responseLoss);
   }
-  function sanitizeMessage(msg) {
-    // Replace non-printable and non-ASCII characters
-    return msg
-      .replace(/[^ -~]+/g, "")
-      .trim()
-      .toLowerCase();
-  }
+  // function sanitizeMessage(msg) {
+  //   // Replace non-printable and non-ASCII characters
+  //   return msg
+  //     .replace(/[^ -~]+/g, "")
+  //     .trim()
+  //     .toLowerCase();
+  // }
 
   if (
     message.toLowerCase().includes("has challenged @Fathai95") ||
     message.includes("has challenged Fathai95") ||
-    (message.includes("has challenged fathai95") && Bot1Fight === 1)
+    message.includes("has challenged fathai95") && Bot1Fight === 1
   ) {
     console.log(`FatHai95: Responding to ${userstate.username} in ${channel}`);
     await delay(1000);
@@ -309,7 +309,7 @@ client2.on("message", async (channel, userstate, message, self) => {
         //client2.say(channel, `${gameOutcome}`);
         if (gameOutcome.includes(taggedUser)) {
           await delay(1200);
-          client2.say(channel, `!give ${taggedUser} `+rpsReward);
+          client2.say(channel, `!give ${taggedUser} ` + rpsReward);
         } else if (gameOutcome.includes("Uddertastic")) {
           return;
         }
@@ -321,17 +321,19 @@ client2.on("message", async (channel, userstate, message, self) => {
     }
   }
 
-  
-if (message ==="!bet on"&&username==="fathai95") {
-  udderBet=1;
-  client2.say(channel,"/me udder is betting! do !give uddertastic <amount> <rock|paper|scissor> you can win x3")
-  console.log("udderbet is "+udderBet);
-  return;
-}else if (message ==="!bet off"&&username==="fathai95") {
-  udderBet=0;
-  client2.say(channel,"/me udder is not betting anymore!")
-  return;
-}
+  if (message === "!bet on" && username === "fathai95") {
+    udderBet = 1;
+    client2.say(
+      channel,
+      "/me udder is betting! do !give uddertastic <amount> <rock|paper|scissor> you can win x3"
+    );
+    console.log("udderbet is " + udderBet);
+    return;
+  } else if (message === "!bet off" && username === "fathai95") {
+    udderBet = 0;
+    client2.say(channel, "/me udder is not betting anymore!");
+    return;
+  }
   if (rpsPattern.test(lowercaseMessage)) {
     const match = lowercaseMessage.match(rpsPattern);
     const betAmount = parseInt(match[1]);
@@ -341,18 +343,33 @@ if (message ==="!bet on"&&username==="fathai95") {
     const udderChoice = ["rock", "paper", "scissor"];
     const randomResponseIndex = Math.floor(Math.random() * udderChoice.length);
     const udderRespond = udderChoice[randomResponseIndex];
-    console.log(taggedUser+" choice is " + choice+" || bet is "+betAmount+' || bet on? '+udderBet);
-    if(udderBet===0){
-      client2.say(channel,'Udder is not taking bets right now!');
+    console.log(
+      taggedUser +
+        " choice is " +
+        choice +
+        " || bet is " +
+        betAmount +
+        " || bet on? " +
+        udderBet
+    );
+    if (udderBet === 0) {
+      client2.say(channel, "Udder is not taking bets right now!");
       return;
     }
-    
-    if (betAmount > maxBetAmount && udderBet===1) {
-      client2.say(channel, `Sorry ${taggedUser}, the maximum bet amount is ${maxBetAmount}`);
+
+    if (betAmount > maxBetAmount && udderBet === 1) {
+      client2.say(
+        channel,
+        `Sorry ${taggedUser}, the maximum bet amount is ${maxBetAmount}`
+      );
       return; // Exit the function
     }
     await delay(1500);
-    if (choice === "rock" || choice === "paper" || choice === "scissor" && udderBet===1) {
+    if (
+      choice === "rock" ||
+      choice === "paper" ||
+      (choice === "scissor" && udderBet === 1)
+    ) {
       playerChoice = choice;
       if (udderRespond && playerChoice) {
         // Calculate the game outcome
@@ -375,7 +392,7 @@ if (message ==="!bet on"&&username==="fathai95") {
         //client2.say(channel, `${gameOutcome}`);
         if (gameOutcome.includes(taggedUser)) {
           await delay(1200);
-          client2.say(channel, `!give ${taggedUser} `+ betAmount*3);
+          client2.say(channel, `!give ${taggedUser} ` + betAmount * 3);
         } else if (gameOutcome.includes("Uddertastic")) {
           return;
         }
