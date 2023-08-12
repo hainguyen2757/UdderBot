@@ -1,10 +1,14 @@
+require('dotenv').config();
+const fathai95OauthKey = process.env.FATHAI95_OAUTH_KEY;
+const uddertasticOauthKey = process.env.UDDERTASTIC_OAUTH_KEY;
+
 const tmi = require("tmi.js");
 const channelName = "cowsep";
 // Bot 1 configuration
 const bot1Config = {
   identity: {
     username: "fathai95",
-    password: "oauth:jvc7yhp8utiizgtki9vwda6wj0fcha", // Generate this from https://twitchapps.com/tmi/
+    password: fathai95OauthKey, // Generate this from https://twitchapps.com/tmi/
   },
   channels: [channelName], // Add the channel name for Bot 1
 };
@@ -13,7 +17,7 @@ const bot1Config = {
 const bot2Config = {
   identity: {
     username: "uddertastic",
-    password: "oauth:ivc8i2koggk0dm2zdx4sx34qw072dv", // Generate this from https://twitchapps.com/tmi/
+    password: uddertasticOauthKey, // Generate this from https://twitchapps.com/tmi/
   },
   channels: [channelName], // Add the channel name for Bot 2
 };
