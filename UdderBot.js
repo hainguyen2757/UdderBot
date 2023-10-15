@@ -1,5 +1,9 @@
 require("dotenv").config();
+const { count } = require("console");
+const { channel } = require("diagnostics_channel");
+// const { count } = require("console");
 const fs = require("fs");
+//const { del } = require("request");
 const fathai95OauthKey = process.env.FATHAI95_OAUTH_KEY;
 const uddertasticOauthKey = process.env.UDDERTASTIC_OAUTH_KEY;
 
@@ -50,15 +54,23 @@ const client2 = new tmi.Client(bot2Config);
 var Bot1Hunt = 1;
 var Bot1Fight = 0;
 let udderBet = 0;
-let targetUdder = "palletlad";
+let targetUdder = "jacko_ws";
+var TargetOn = 1;
+var StealTimer = 55000;
 var udderRps = 0;
 var Bot1Steal = 1;
-var udderEmote =1;
-const hunting ="!hunt all";
-const bossing ="!boss half";
+var udderEmote = 1;
+const hunting = "!hunt 40%";
+const bossing = "!boss 30%";
+let isUddertastic=0;
+let RemainingCooldown=0;
+let isUddertasticOn=1;
+let UddertasticSayRandomChatTime = 60000 + Math.random() * 120000; // Random interval between 1 and 2 minutes
 
 function getRandomDelay() {
-  return Math.random() * 2700 + 500; // Generate random delay between 200ms and 1300ms
+  //return Math.random() * 20000 + 500; // Generate random delay between 200ms and 1300ms
+  return 1000; //1000ms = 1s
+
 }
 client1.connect();
 console.log("Fathai95 connected to channel:", bot1Config.channels[0]);
@@ -118,10 +130,17 @@ client1.on("message", async (channel, userstate, message, self) => {
     console.log("Bot1 steal is off");
     return;
   }
-  if (message.includes("!steal <username>")&& Bot1Steal === 1) {
-    await delay(58000);
+  if (
+    message.includes("!steal <username> <amount> to") &&
+    Bot1Steal === 1 &&
+    username === "chatsrpg"
+  ) {
+    await delay(StealTimer);
     client1.say(channel, `!steal ${targetUdder} all`);
     console.log("fathai is stealing from " + targetUdder);
+    Bot1Steal = 0;
+    await delay(120000);
+    Bot1Steal = 1;
   }
   if (
     message.includes("Type !hunt <amount>") &&
@@ -134,7 +153,7 @@ client1.on("message", async (channel, userstate, message, self) => {
   }
 
   if (
-    message.includes("!boss <amount>") &&
+    message.includes("!boss <amount> to") &&
     username === "chatsrpg" &&
     Bot1Hunt === 1
   ) {
@@ -219,10 +238,8 @@ client1.on("message", async (channel, userstate, message, self) => {
   }
   if (message.includes("!arena to")) {
     await delay(randomDelay);
-    client1.say(channel,`!arena`);
+    client1.say(channel, `!arena`);
   }
-
-
 }); //end of client1
 let lastResponse = ""; // Initialize with an empty string
 
@@ -236,45 +253,49 @@ const emoteResponses = [
   "BOOBAL CUm",
 ];
 
-const randomChats =[
-"POGGERS look at that",
-"Thats nice Ok",
-"LUL",
-"YEP",
-"KEKW",
-"Stare",
-"gachiBASS Boner here i come",
-"Concerned u sure?",
-"Concerned i mean...",
-"boobaPls",
-"CAUGHTIN4K",
-"hyperLick",
-"LOser another one",
-"NOPERS i dont think so",
-"NODDERS damn right",
-"Ok good enough",
-"Lmao look at this guy KEKW",
-"Pog",
-"Talking keep talking",
-"Wow",
-"classic",
-"NOTED uh huh",
-"Plotge",
-"Susge",
-"owojam dance with me owojam",
-"docmeat",
-"you're so right cowsep",
-"Damn bro Wow",
-"Imagine doing that, wouldnt be me Clueless",
-"Hmm interesting",
-"owo",
-"owoshy",
-"pepePoint look guys",
-"Chatting keep typing bud",
-"HUH uhhhh",
-"owoCheer lets go",
-"Shruge idk man",
-"COPIUM good stuff",
+const randomChats = [
+  "POGGERS look at that",
+  "Thats nice Ok",
+  "LUL",
+  "YEP",
+  "KEKW",
+  "Stare",
+  "gachiBASS Boner here i come",
+  "Concerned u sure?",
+  "Concerned i mean...",
+  "boobaPls",
+  "CAUGHTIN4K",
+  "hyperLick",
+  "LOser another one",
+  "NOPERS i dont think so",
+  "NODDERS damn right",
+  "Ok good enough",
+  "Lmao look at this guy KEKW",
+  "Pog",
+  "Talking keep talking",
+  "Wow",
+  "classic",
+  "NOTED uh huh",
+  "Plotge",
+  "Susge",
+  "owojam dance with me owojam",
+  "docmeat",
+  "you're so right cowsep",
+  "Damn bro Wow",
+  "Imagine doing that, wouldnt be me Clueless",
+  "Hmm interesting",
+  "owo",
+  "owoshy",
+  "pepePoint look guys",
+  "Chatting keep typing bud",
+  "HUH uhhhh",
+  "owoCheer lets go",
+  "Shruge idk man",
+  "COPIUM good stuff",
+  "Aware oh...",
+  "COPIUM if you say so...",
+  "weSmart smart",
+  "fricc you",
 ];
 function getRandomResponseIndex(responsesArray) {
   return Math.floor(Math.random() * responsesArray.length);
@@ -293,22 +314,28 @@ function getRandomChat() {
 }
 function sayRandomChat() {
   const randomSentence = getRandomChat();
-  // Replace 'client2' with your actual client object
-  // Replace 'yourChannel' with the channel you want to send messages to
-  client2.say('cowsep', randomSentence);
+  if(isUddertasticOn===1){
+    client2.say("cowsep", randomSentence);
+  isUddertastic++;
+  console.log(`__________________isUddertastic: ${isUddertastic} | interval: ${UddertasticSayRandomChatTime}`);
+  if(isUddertastic >=5){
+    isUddertasticOn = 0;
+    //client2.disconnect();
+    client2.say(channelName,"Dead stream, im out!")
+    console.log("_________________uddertastic is alone, shutting down");
+    }
+  }
+  
 }
-const initialDelay = Math.random() * 300000; // Random delay between 0 and 5 minutes
+const initialDelay = Math.random() * 120000; // Random delay between 0 and 5 minutes
 setTimeout(() => {
   sayRandomChat(); // Send a random sentence immediately
-  // Set an interval to send random sentences every 10 to 15 minutes
-  const interval = 60000 + Math.random() * 60000; // Random interval between 2 and 4 minutes
+  //const interval = 60000 + Math.random() * 60000; // Random interval between 1 and 2 minutes
+  const interval = UddertasticSayRandomChatTime;
   setInterval(sayRandomChat, interval);
 }, initialDelay);
 
 let currentResponse = ""; // Initialize with an empty string
-
-
-
 
 client2.on("message", async (channel, userstate, message, self) => {
   // udder
@@ -345,8 +372,8 @@ client2.on("message", async (channel, userstate, message, self) => {
   if (
     message.includes("udder") &&
     !message.includes("@uddertastic") &&
-    !message.includes("uddertastic")
-    && udderEmote ===1
+    !message.includes("uddertastic") &&
+    udderEmote === 1
   ) {
     // || message === "udder 󠀀"  ) {
     let responseIndex;
@@ -390,7 +417,6 @@ client2.on("message", async (channel, userstate, message, self) => {
       await delay(300);
       console.log(`uddertastic is giving Fathai95 ${giveMinion} minions`);
       client2.say(channel, "!give fathai95 " + giveMinion);
-
     }
   }
   if (message.includes("!rps help")) {
@@ -559,27 +585,130 @@ client2.on("message", async (channel, userstate, message, self) => {
     }
   }
 
-  if (udderTargetPattern.test(message) && message !== "uddertastic target 󠀀" && username ==="fathai95") {
+  // if (TargetOn === 0 && udderTargetPattern.test(message) && message !== "uddertastic target 󠀀" && username === "fathai95") {
+  //   const match = message.match(udderTargetPattern);
+  //   targetUdder = match[1];
+  //   client2.say(
+  //     channel,
+  //     `Roger that, targeting ${targetUdder} Igotmyeyesonyou`
+  //   );
+  // }
+
+  
+  let countdown = 600; // Initial countdown value in seconds (10 minutes)
+  let countdownInterval;
+  let timerRunning = false;
+// Function to update the countdown and display it
+function updateCountdown() {
+  //const minutes = Math.floor(countdown / 60);
+  //const seconds = countdown % 60;
+  //console.log(`Time remaining: ${minutes} minutes ${seconds} seconds`); //counting down with consolelog
+  
+  
+  if (countdown <= 0) {
+    console.log("Countdown has reached zero.");
+    clearInterval(countdownInterval); // Stop the countdown when it reaches zero
+    timerRunning = false;
+    
+  } else {
+    countdown--; // Decrement the countdown by 1 second
+  RemainingCooldown=countdown;
+
+  }
+  return countdown;
+}
+
+// Function to start the countdown timer
+function startTimer() {
+  if (!timerRunning) {
+    countdown = 600; // Reset the countdown to 10 minutes
+    console.log(`Timer started.`);
+    timerRunning = true;
+    updateCountdown(); // Display the initial countdown value
+    // Start the countdown timer
+    countdownInterval = setInterval(updateCountdown, 1000);
+  } else {
+    console.log(`Timer is already running.`);
+  }
+}
+
+  if (TargetOn === 1 && Bot1Steal === 1 && udderTargetPattern.test(message) && username !=="fathai95") {
     const match = message.match(udderTargetPattern);
-    targetUdder = match[1];
-    client2.say(
-      channel,
-      `Roger that, targeting ${targetUdder} Igotmyeyesonyou`
-    );
+    if (
+      match.includes("fathai95") ||
+      match.includes("Fathai95") ||
+      match.includes("@Fathai95") ||
+      match.includes("uddertastic") ||
+      match.includes("@uddertastic")
+    ) {
+      //console.log(username + " trying to target " + targetUdder);
+      targetUdder = username;
+      client2.say(
+        channel,
+        `HUH what u tryin to do, im targeting you ${targetUdder} Igotmyeyesonyou`
+      );
+      startTimer();
+      TargetOn = 0;
+      await delay(1200001);
+      TargetOn = 1;
+      return;
+    } else {
+      if (match) {
+        targetUdder = match[1];
+        client2.say(
+          channel,
+          `Roger that, targeting ${targetUdder} Igotmyeyesonyou`
+        );
+        startTimer();
+        TargetOn = 0;
+        await delay(1200001);
+        TargetOn = 1;
+      }
+    }
+
   }
-  if (message === "uddertastic target" && username === "fathai95") {
-    client2.say(channel, `Current target is ${targetUdder}!`);
+  if (udderTargetPattern.test(message) && TargetOn === 0) {   
+    //client2.say(channel,'Targeting on cooldown, try again!');
+const minutes = Math.floor(RemainingCooldown / 60);
+  const seconds = RemainingCooldown % 60;
+  console.log(`Time remaining: ${minutes} minutes ${seconds} seconds`); //counting down with consolelog
+    await delay(1000);
   }
-  if (message.includes("!steal <username>")) {
-    await delay(58000);
-    client2.say(channel, `!steal ${targetUdder} all`);
-    console.log("udder is stealing from " + targetUdder);
+  
+
+  if (username==="fathai95" && udderTargetPattern.test(message)) {
+    const match = message.match(udderTargetPattern);
+    if (match) {
+      targetUdder = match[1];
+      client2.say(
+        channel,
+        `Roger that, targeting ${targetUdder} Igotmyeyesonyou`
+      );
+    }
+
   }
 
-//   const laughPattern = /@runningitdownmidirl \(([-\d,]+)\)/i;
-// const laughPattern2 = /@Dobardman \(([-\d,]+)\)/i;
-const laughPattern = /@RunningItDownMidIRL \(([-\d.]+M)\)/i;
-const laughPattern2 = /@Dobardman \(([-\d.]+M)\)/i;
+
+
+   
+
+  if (
+    message.includes("!steal <username> <amount> to") &&
+    username === "chatsrpg" &&
+    Bot1Steal === 1
+  ) {
+    await delay(StealTimer);
+    client2.say(channel, `!steal ${targetUdder} all`);
+    console.log("udder is stealing from " + targetUdder);
+    Bot1Steal = 0;
+    await delay(120000);
+    Bot1Steal = 1;
+  }
+
+  //   const laughPattern = /@runningitdownmidirl \(([-\d,]+)\)/i;
+  // const laughPattern2 = /@Dobardman \(([-\d,]+)\)/i;
+  const laughPattern = /@RunningItDownMidIRL \(([-\d.]+M)\)/i;
+  const laughPattern2 = /@Dobardman \(([-\d.]+M)\)/i;
 
   // if (laughPattern.test(lowercaseMessage)) {
   //   const match = lowercaseMessage.match(laughPattern);
@@ -603,14 +732,15 @@ const laughPattern2 = /@Dobardman \(([-\d.]+M)\)/i;
     await delay(500);
     client2.say(
       channel,
-      `hunt: ${Bot1Hunt}| fight: ${Bot1Fight}|emote: ${udderEmote}|Steal: ${Bot1Steal}, target is ${targetUdder}`
+      `hunt: ${Bot1Hunt}| fight: ${Bot1Fight}|emote: ${udderEmote}|Steal: ${Bot1Steal} |isUddertastic: ${isUddertastic}, target is ${targetUdder}`
     );
   }
-  if (message === "meandyou LaatiMafia" && username === "fathai95") {
-    await delay(500);
-    client2.say(channel, `meandyou laatimafia`);
-  }
-  if (message === "meandyou uddertastic"||message === "meandyou @uddertastic") {
+
+  if (
+    message === "meandyou uddertastic" ||
+    message === "meandyou @uddertastic"
+  ) {
+    //username !=="helpstepbrolmstuck" &&
     await delay(200);
     client2.say(channel, `meandyou ${username}`);
   }
@@ -623,33 +753,37 @@ const laughPattern2 = /@Dobardman \(([-\d.]+M)\)/i;
     console.log("udderemote is off");
     return;
   }
-  if (message.includes("uddertastic")&& username !="fathai95" && username !="chatsrpg") {
+  if (
+    message.includes("uddertastic") &&
+    username !== "fathai95" &&
+    username !== "chatsrpg" &&
+    message !== "meandyou uddertastic" &&
+    !message.includes("!steal uddertastic") &&
+    !message.includes("!steal @uddertastic")
+  ) {
     const randomSentence = getRandomChat();
     client2.say(channel, randomSentence);
+  console.log("_______________isUddertastic="+isUddertastic);
+
   }
 
   if (message.includes("!arena to")) {
     await delay(randomDelay);
-    client2.say(channel,`!arena`);
+    client2.say(channel, `!arena`);
   }
-
-  
-
-
+if (message && username !== "streamelements") {
+  isUddertastic=0;
+  //console.log("________someone is talking_______");
+}else{
+  return;
+}
+if(message==="uddertastic on"){
+  isUddertasticOn =1;
+  client2.say(channel,"Im always on baby!");}
 });
 
-// let shuttingDown = false;
-
-// process.on('SIGINT', () => {
-//   if (!shuttingDown) {
-//     shuttingDown = true;
-//     console.log('Bot shutting down gracefully...');
-//     // Perform any necessary cleanup or finalization here
-//     process.exitCode = 0;
-//   }
-// });
-
-client2.on("stream-down", (channel) => {
-  client2.disconnect();
+client2.on('stream-offline', (channel) => {
   console.log(`Stream has ended in ${channel}. Stopping the bot.`);
+  // You can take action here, such as stopping your bot or performing other tasks.
+  client2.disconnect();
 });
