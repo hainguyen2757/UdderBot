@@ -1,0 +1,59 @@
+ // if (
+  //   message.includes("fathai95") &&
+  //   message.includes("You gained") &&
+  //   //username === "minionrpg" &&
+  //   !getisGambaRunning
+  // ) {
+  //   const gainedMinionsMatch = message.match(/(\d+(\.\d+)?[MB])/i);
+  //   if (gainedMinionsMatch) {
+  //     const minionsGained = gainedMinionsMatch[0];
+  //     const minionsGainedValue =
+  //       parseFloat(minionsGained) * (minionsGained.includes("B") ? 1e9 : 1e6);
+  //     if (minionsGainedValue < 30e6) {
+  //       clearAllBetIntervals();
+  //       console.log(
+  //         "------------------------gaining less than 30m, changing risk to 20m (<30e6)----------------"
+  //       );
+  //       (async () => {
+  //         intervalBet = setInterval(async () => {
+  //           await delay(1000);
+  //           client1.say("minionrpg", `!spin`);
+  //           await delay(2000);
+  //           client1.say("minionrpg", `!risk 20m`);
+  //           countdown(58);
+  //         }, 61000);
+  //       })();
+  //     }
+  //   }
+  // } //end of if
+
+  // if (
+  //   message.includes("fathai95") &&
+  //   message.includes("You lost") &&
+  //   username === "minionrpg" &&
+  //   !getisGambaRunning
+  // ) {
+  //   const minionsLostMatch = message.match(/(\d+(\.\d+)?[MB])/i);
+  //   if (minionsLostMatch) {
+  //     const minionsLost = minionsLostMatch[0];
+  //     const minionsLostValue =
+  //       parseFloat(minionsLost) * (minionsLost.includes("B") ? 1e9 : 1e6);
+  //     //console.log(`You lost ${minionsLost} minions`);
+  //     if (minionsLostValue > 200e6) {
+  //       clearAllBetIntervals();
+  //       console.log(
+  //         "------------------------Losing more than 200m, decreasing risk to 5% (<200e6)----------------"
+  //       );
+  //       isRisk10m = 0;
+  //       (async () => {
+  //         intervalBet = setInterval(async () => {
+  //           await delay(1000);
+  //           client1.say("minionrpg", `!spin`);
+  //           await delay(2000);
+  //           client1.say("minionrpg", `!risk 5%`);
+  //           countdown(58);
+  //         }, 61000);
+  //       })();
+  //     }
+  //   }
+  // } //end of if
