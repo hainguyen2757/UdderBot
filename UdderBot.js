@@ -2,15 +2,16 @@
 import dotenv from "dotenv";
 import tmi, { client } from "tmi.js";
 import { clientUdder } from "./bot2.js";
-import { clientFathai } from "./bot1.js";
+import { clientFathai } from "./bot1.js"; // Ensure clientFathai is defined in bot1.js
 import { logMessageToFile, delay, logWinrateToFile } from "./utils.js";
 import { myVariables } from "./constants.js"; // Import myVariables
 
 // Call the `config` method to load environment variables from a .env file
+// This allows you to use environment variables defined in a .env file
 dotenv.config();
 //change channel name here cowsep or minionrpg
 export const channelName = ["cowsep", "minionrpg"];
-//export const channelName = "minionrpg";
+// export const channelName = "minionrpg";
 
 const uddertasticOauthKey = process.env.UDDERTASTIC_OAUTH_KEY;
 
@@ -53,7 +54,7 @@ client1.on("error", (error) => {
 });
 console.log("FatHai95 connected to channel:", channelName);
 
-logWinrateToFile("restarted");
+logWinrateToFile("restarted");//log retart event if the bot is restarted
 
 let getLogMinionrpg = myVariables.logMinionrpg;
 let intervalBet;
@@ -61,17 +62,11 @@ let intervalBillionairBet;
 let intervalCountdown;
 const startTime = new Date();
 let getisGambaRunning = myVariables.isGambaRunning;
-let count = 0;
-const maxCount = 4;
-let isBillionare = false;
 let logTest = 0;
-let isWaiting = false;
-let isBettingOff = false;
-let isAutoGambaOn = false;
 let currentBetAmount;
 let logTotalMinions;
-let isBroke = false;
-let isWinstreak = false;
+let wins = 0;
+let losses = 0;
 let streaks = {
   win: {
     2: 0,
@@ -106,6 +101,25 @@ let streaks = {
     15: 0,
   },
 };
+
+//------------------ CONTROLLERS ------------------
+let isBillionare = false;
+let isWaiting = false;
+let isBettingOff = false;
+let isAutoGambaOn = false;
+let isAutoGamba2On = false;
+let isBroke = false;
+let isWinstreak = false;
+let rebirthed = true;
+let riskUnder50 = 5; //if has less than 50m, risk 5m
+let riskUnder100 = 10; //if has less than 100m, risk 10m
+let riskUnder200 = 20; //if has less than 200m, risk 20m
+let riskOver200 = 30; //if has more than 200m, risk 30m
+let setAutoGamba2Risk=2; //set it to "2k" or "200k" or "2"
+let isAutoSpinOn = true;
+
+//------------------ CONTROLLERS ------------------
+
 client1.on("message", async (channel, userstate, message, self) => {
   const username = userstate.username;
 
@@ -116,6 +130,9 @@ client1.on("message", async (channel, userstate, message, self) => {
         userstate.username
       }: ${message}`
     );
+  }
+  if (channel === "#cowsep" && username === "minionrpg") {
+    logMessageToFile(`[${channel}] ${username}: ${message}`);
   }
 
   if (channel === "#minionrpg") {
@@ -134,19 +151,23 @@ client1.on("message", async (channel, userstate, message, self) => {
       await delay(1000);
       client1.say(
         `minionrpg`,
-        `isBillionare:${isBillionare} | isWaiting:${isWaiting} | currentBetAmount: ${currentBetAmount} | logTotalMinions: ${logTotalMinions}`
+        `isBillionare:${isBillionare} | isWaiting:${isWaiting} | currentBetAmount: ${currentBetAmount} | logTotalMinions: ${logTotalMinions} | autogamba: ${isAutoGambaOn} | isBettingOff: ${isBettingOff} | SpinOn: ${isAutoSpinOn}`
       );
     })();
   }
 
-  if (logTotalMinions !== "undefined" && logTotalMinions <= 50e6) {
-    (async () => {
-      await delay(10000);
-      sendMessage("minionrpg", `uddertastic give me 12.5m`);
-      await delay(61000);
-      sendMessage("minionrpg", `uddertastic give me 12m`);
-    })();
-  }
+  // if (
+  //   logTotalMinions !== "undefined" &&
+  //   logTotalMinions <= 50e6 &&
+  //   rebirthed === false
+  // ) {
+  //   (async () => {
+  //     await delay(10000);
+  //     sendMessage("minionrpg", `uddertastic give me 12.5m`);
+  //     await delay(61000);
+  //     sendMessage("minionrpg", `uddertastic give me 12m`);
+  //   })();
+  // }
 
   if (
     (message === "!spin" || message.includes("!risk")) &&
@@ -164,20 +185,21 @@ client1.on("message", async (channel, userstate, message, self) => {
     console.log("----------------------ALL BETTINGS ARE OFF----------------");
     isBettingOff = true;
     isAutoGambaOn = false;
+    isAutoGamba2On = false;
     clearAllBetIntervals();
     clearInterval(intervalCountdown);
-  }
-  if (channel === "#cowsep" && username === "minionrpg") {
-    logMessageToFile(`[${channel}] ${username}: ${message}`);
   }
 
   // if (message === "test" && username === "fathai95") {
 
   // }
 
-  if (message === "!autogamba20" && username === "fathai95") {
-    riskAmount("20%");
-    isAutoGambaOn = false;
+  if (message === "!autogamba2" && username === "fathai95") {
+    console.log("--------------Starting autogamba2--------------");
+    isAutoGambaOn = true;
+    isAutoGamba2On = true;
+    myVariables.isUddertasticOn = 0; //turn off uddertastic chatting
+    riskAmount(setAutoGamba2Risk);
   }
 
   //start gambling risk and spin every 60s
@@ -202,7 +224,8 @@ client1.on("message", async (channel, userstate, message, self) => {
   //if not a billionare then execute this
   //!minions
   if (
-    message.includes("fathai95 has") &&
+    message.includes("fathai95") &&
+    message.includes("has") &&
     username === "minionrpg" &&
     channel === "#minionrpg" &&
     isBettingOff === false &&
@@ -211,7 +234,11 @@ client1.on("message", async (channel, userstate, message, self) => {
     clearInterval(intervalCountdown);
     clearAllBetIntervals();
     const totalMinionsMatch = message.match(/(\d+(\.\d+)?[MB])/i);
-    if (totalMinionsMatch) {
+    if (isAutoGamba2On === true) {
+      riskAmount(setAutoGamba2Risk);
+    }
+
+    if (totalMinionsMatch && isAutoGamba2On === false) {
       const totalMinions = totalMinionsMatch[0];
       const totalMinionsValue =
         parseFloat(totalMinions) * (totalMinions.includes("B") ? 1e9 : 1e6); // full numbers 100.000.000 minions
@@ -227,21 +254,19 @@ client1.on("message", async (channel, userstate, message, self) => {
           console.log(
             "-------------------------Have less than 50m, reducing risk to 5m---------------"
           );
-          riskAmount(5);
-        } else if (totalMinionsValue > 50e6 && totalMinionsValue < 160e6) {
+          riskAmount(riskUnder50);
+        } else if (totalMinionsValue > 50e6 && totalMinionsValue < 100e6) {
           //total minions more than 50m
-          console.log(
-            "-------------------------Have more than 50m, increasing risk to 10m---------------"
-          );
           isBillionare = false;
-          riskAmount(10);
-        } else if (totalMinionsValue > 160e6 && totalMinionsValue < 1e9) {
-          //total minions more than 160m
-          console.log(
-            "-------------------------Have more than 160m, increasing risk to 30m---------------"
-          );
+          riskAmount(riskUnder100);
+        } else if (totalMinionsValue > 100e6 && totalMinionsValue < 200e6) {
+          //total minions more than 100m
           isBillionare = false;
-          riskAmount(30);
+          riskAmount(riskUnder200);
+        } else if (totalMinionsValue > 200e6 && totalMinionsValue < 1e9) {
+          //total minions more than 200m
+          isBillionare = false;
+          riskAmount(riskOver200);
         } else if (totalMinionsValue >= 1e9) {
           //total minions more than 1 billion
           console.log(
@@ -251,7 +276,7 @@ client1.on("message", async (channel, userstate, message, self) => {
           riskAmount("20%");
         } else {
           console.log(
-            `---------------ERRPR RETRIVING MINIONS AMOUNT--------------`
+            `---------------ERROR RETRIVING MINIONS AMOUNT--------------`
           );
         }
       }
@@ -279,11 +304,12 @@ client1.on("message", async (channel, userstate, message, self) => {
     message.includes("your wager is too low") &&
     username === "minionrpg" &&
     message.includes("fathai95") &&
-    isAutoGambaOn === true
+    isAutoGambaOn === true &&
+    isBillionare === false
   ) {
     console.log(message);
     console.log(
-      "--------------Total is over 1b, changing to risk 20%------------------"
+      "--------------Total is over 1b, delcaring billionair status, changing to risk 20%------------------"
     );
     isBillionare = true;
     riskAmount("20%");
@@ -320,7 +346,7 @@ client1.on("message", async (channel, userstate, message, self) => {
     isWaiting === true &&
     isAutoGambaOn === true
   ) {
-    clearAllBetIntervals();
+    //clearAllBetIntervals();
     console.log("------------already waiting-----------");
   }
   // Reset command to clear the interval
@@ -330,16 +356,17 @@ client1.on("message", async (channel, userstate, message, self) => {
     message.includes("lost their wager of") &&
     username === "minionrpg" &&
     channel === "#minionrpg" &&
-    isAutoGambaOn === true
+    isAutoGambaOn === true &&
+    rebirthed === false
   ) {
     const minionsSpinLostMatch = message.match(/(\d+(\.\d+)?[MB])/i);
     if (minionsSpinLostMatch) {
       const minionsLost = minionsSpinLostMatch[0];
       const minionsLostValue =
         parseFloat(minionsLost) * (minionsLost.includes("B") ? 1e9 : 1e6);
-      if (minionsLostValue < 10e6) {
+      if (minionsLostValue < 10e6 && rebirthed === false) {
         console.log(`-----------IM BROKE----------`);
-        isBroke === true;
+        isBroke = true;
         //clearAllBetIntervals();
         clearInterval(intervalCountdown);
         (async () => {
@@ -362,14 +389,15 @@ client1.on("message", async (channel, userstate, message, self) => {
     message.includes("and won") &&
     username === "minionrpg" &&
     channel === "#minionrpg" &&
-    isAutoGambaOn === true
+    isAutoGambaOn === true &&
+    rebirthed === false
   ) {
     const minionsSpinLostMatch = message.match(/(\d+(\.\d+)?[MB])/i);
     if (minionsSpinLostMatch) {
       const minionsLost = minionsSpinLostMatch[0];
       const minionsLostValue =
         parseFloat(minionsLost) * (minionsLost.includes("B") ? 1e9 : 1e6);
-      if (minionsLostValue < 10e6) {
+      if (minionsLostValue < 10e6 && rebirthed === false) {
         console.log(`-----------IM BROKE----------`);
         isBroke = true;
         //clearAllBetIntervals();
@@ -420,6 +448,7 @@ client1.on("message", async (channel, userstate, message, self) => {
       const minionsLostValue =
         parseFloat(minionsLost) * (minionsLost.includes("B") ? 1e9 : 1e6);
       //console.log(`You lost ${minionsLost} minions`);
+
       if (
         minionsLostValue < 200e6 &&
         isBillionare === true &&
@@ -445,7 +474,7 @@ client1.on("message", async (channel, userstate, message, self) => {
   } //end of if
 
   if (
-    (message === "!hunt" || message === "!arena") &&
+    (message.includes(`!hunt`) || message.includes(`!arena`)) &&
     username === "fathai95" &&
     channel === "#minionrpg" &&
     isAutoGambaOn === true
@@ -457,7 +486,6 @@ client1.on("message", async (channel, userstate, message, self) => {
     clearInterval(intervalCountdown);
     (async () => {
       await delay(1000);
-      //client1.say("minionrpg", `!reset`);
       sendMessage("minionrpg", `!reset`);
     })();
   }
@@ -478,6 +506,8 @@ client1.on("message", async (channel, userstate, message, self) => {
       console.log(`---------finished waiting---------`);
       await delay(1000);
       sendMessage("minionrpg", `!autogamba`); //!autogamba already has calling a minions
+      //sendMessage("minionrpg", `!autogamba2`); //!autogamba already has calling a minions
+
     })(); // Call the async function immediately
   }
 
@@ -522,13 +552,29 @@ client1.on("message", async (channel, userstate, message, self) => {
     });
   });
 
+  if (
+    message.includes(`You lost`) &&
+    message.includes("fathai95") &&
+    username === "minionrpg"
+  ) {
+    losses++;
+  } else if (
+    message.includes(`You gained`) &&
+    message.includes("fathai95") &&
+    username === "minionrpg"
+  ) {
+    wins++;
+  }
+
   if (message === "!streak" && username === "fathai95") {
     console.log(`Bot has been running for: ${getElapsedTime()}`);
-    console.log(
-      `[${getVietnamTime("timeOnly")}] : Win streaks: ${JSON.stringify(
-        streaks.win
-      )} || Loss streaks: ${JSON.stringify(streaks.loss)}`
-    );
+    // console.log(
+    //   `[${getVietnamTime("timeOnly")}] : Win streaks: ${JSON.stringify(
+    //     streaks.win
+    //   )} || Loss streaks: ${JSON.stringify(
+    //     streaks.loss
+    //   )} || W: ${wins} L:${losses}`
+    // );
     logWinrateToFile(
       `[${channel}] Manual Log: Win streaks: ${JSON.stringify(
         streaks.win
@@ -542,7 +588,9 @@ client1.on("message", async (channel, userstate, message, self) => {
         "minionrpg",
         `Win streaks: ${formatStreaks(
           streaks.win
-        )} || Loss streaks: ${formatStreaks(streaks.loss)}`
+        )} || Loss streaks: ${formatStreaks(
+          streaks.loss
+        )} ||W: ${wins} L:${losses}`
       );
     })();
   }
@@ -586,24 +634,38 @@ client1.on("message", async (channel, userstate, message, self) => {
   }
 
   function clearAllBetIntervals() {
-    console.log("------------clearing all bets--------------");
+    console.log("--------------clearing all bets-------------");
     clearInterval(intervalBet);
     clearInterval(intervalBillionairBet);
   }
+
+if (message==="!spinon" && username==="fathai95"){
+  isAutoSpinOn = true;
+  console.log("Auto spin is on");
+} else if (message==="!spinoff" && username==="fathai95"){
+  isAutoSpinOn=false;
+  console.log("Auto spin is off");
+}
 
   function riskAmount(amount) {
     clearAllBetIntervals();
     clearInterval(intervalCountdown);
     (async () => {
       currentBetAmount = amount;
+      console.log(`--------------Starting bets-------------------`);
+
       countdown(63);
       // Function to execute the betting logic
       const executeBet = async () => {
         await delay(1000);
-        sendMessage("minionrpg", `!spin`);
-        await delay(2000);
+        if (isAutoSpinOn === true) {
+          sendMessage("minionrpg", `!spin`);
+          await delay(2000);
+        }
         // Check if the amount is a percentage
         if (typeof amount === "string" && amount.includes("%")) {
+          sendMessage("minionrpg", `!risk ${amount}`);
+        } else if (typeof amount === "string" && amount.includes("k")) {
           sendMessage("minionrpg", `!risk ${amount}`);
         } else {
           sendMessage("minionrpg", `!risk ${amount}m`);
@@ -650,14 +712,13 @@ client1.on("message", async (channel, userstate, message, self) => {
   function getElapsedTime() {
     const currentTime = new Date();
     const elapsedTime = currentTime - startTime; // Elapsed time in milliseconds
-
     // Convert elapsed time to hours, minutes, and seconds
     const hours = Math.floor(elapsedTime / (1000 * 60 * 60));
     const minutes = Math.floor((elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((elapsedTime % (1000 * 60)) / 1000);
-
     return `${hours}h ${minutes}m ${seconds}s`;
   }
+
   //example
   //console.log(`Bot has been running for: ${getElapsedTime()}`);
 }); //end of client1.on

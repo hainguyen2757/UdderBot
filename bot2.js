@@ -53,8 +53,8 @@ export function clientUdder(newClientUdder) {
     // }
 
     if (message.includes("Type !hunt") && username === "minionrpg") {
-      client2.say(channel, "!hunt " + minionAmount);
-      //hunt(channel,client2);
+      //client2.say(channel, "!hunt " + minionAmount);
+      hunt(channel, client2);
     }
 
     if (message.includes("Type !treasure") && username === "minionrpg") {
@@ -96,10 +96,11 @@ export function clientUdder(newClientUdder) {
 
     if (message.startsWith("uddertastic say") && username === "fathai95") {
       const response = message.replace("uddertastic say", "").trim();
+
       await delay(randomResponseDelayTime);
-      if ((getLogMinionrpg = 0)) {
-        client2.say(channel, `${response}`);
-      } else if ((getLogMinionrpg = 1)) {
+      if (channel === "#cowsep") {
+        client2.say("cowsep", `${response}`);
+      } else if (channel === "#minionrpg") {
         client2.say("minionrpg", `${response}`);
       }
     }

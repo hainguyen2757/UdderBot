@@ -8,7 +8,7 @@ export let myVariables = {
     udderRps: 1,
     Bot1Steal: 1,
     udderEmote: 1,
-    hunting: "!hunt",
+    hunting: "!hunt 1b",
     bossing: "!boss 30%",
     isUddertasticAlone: 0,
     RemainingCooldown: 0,
