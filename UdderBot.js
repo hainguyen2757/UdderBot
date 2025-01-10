@@ -54,7 +54,7 @@ client1.on("error", (error) => {
 });
 console.log("FatHai95 connected to channel:", channelName);
 
-logWinrateToFile("restarted");//log retart event if the bot is restarted
+logWinrateToFile("restarted"); //log retart event if the bot is restarted
 
 let getLogMinionrpg = myVariables.logMinionrpg;
 let intervalBet;
@@ -115,7 +115,7 @@ let riskUnder50 = 5; //if has less than 50m, risk 5m
 let riskUnder100 = 10; //if has less than 100m, risk 10m
 let riskUnder200 = 20; //if has less than 200m, risk 20m
 let riskOver200 = 30; //if has more than 200m, risk 30m
-let setAutoGamba2Risk=2; //set it to "2k" or "200k" or "2"
+let setAutoGamba2Risk = "2k"; //set it to "2k" or "200k" or "2"
 let isAutoSpinOn = true;
 
 //------------------ CONTROLLERS ------------------
@@ -151,7 +151,7 @@ client1.on("message", async (channel, userstate, message, self) => {
       await delay(1000);
       client1.say(
         `minionrpg`,
-        `isBillionare:${isBillionare} | isWaiting:${isWaiting} | currentBetAmount: ${currentBetAmount} | logTotalMinions: ${logTotalMinions} | autogamba: ${isAutoGambaOn} | isBettingOff: ${isBettingOff} | SpinOn: ${isAutoSpinOn}`
+        `isBillionare:${isBillionare} | isWaiting:${isWaiting} | currentBetAmount: ${currentBetAmount} | logTotalMinions: ${logTotalMinions} | autogamba: ${isAutoGambaOn} | isBettingOff: ${isBettingOff} | SpinOn: ${isAutoSpinOn} | setAutoGamba2Risk:${setAutoGamba2Risk}`
       );
     })();
   }
@@ -193,9 +193,28 @@ client1.on("message", async (channel, userstate, message, self) => {
   // if (message === "test" && username === "fathai95") {
 
   // }
+  if (message.includes("!setrisk") && username === "fathai95") {
+    console.log(
+      "--------------Setting autogamba2 risk manually, turned off all autogamba--------------"
+    );
+
+    const riskAmountMatch = message.match(/(\d+(\.\d+)?[KMB])/i);
+    if (riskAmountMatch) {
+      const riskAmount = riskAmountMatch[0];
+      console.log(`--------------Setting risk to: ${riskAmount}`);
+      setAutoGamba2Risk = riskAmount;
+      (async () => {
+        await delay(1000);
+        sendMessage("minionrpg", `!autogambaoff`);
+        await delay(1000);
+        sendMessage("minionrpg", `!autogamba2`);
+      })();
+    }
+  }
 
   if (message === "!autogamba2" && username === "fathai95") {
-    console.log("--------------Starting autogamba2--------------");
+    console.log(`-------------Risk Amount: ${setAutoGamba2Risk}-------------`);
+    
     isAutoGambaOn = true;
     isAutoGamba2On = true;
     myVariables.isUddertasticOn = 0; //turn off uddertastic chatting
@@ -505,9 +524,11 @@ client1.on("message", async (channel, userstate, message, self) => {
       await delay(60000); // Wait for 60 seconds
       console.log(`---------finished waiting---------`);
       await delay(1000);
-      sendMessage("minionrpg", `!autogamba`); //!autogamba already has calling a minions
-      //sendMessage("minionrpg", `!autogamba2`); //!autogamba already has calling a minions
-
+      if (isAutoGamba2On === true) {
+        sendMessage("minionrpg", `!autogamba2`);
+      } else if (isAutoGamba2On === false) {
+        sendMessage("minionrpg", `!autogamba`); //!autogamba already has calling a minions
+      }
     })(); // Call the async function immediately
   }
 
@@ -533,9 +554,9 @@ client1.on("message", async (channel, userstate, message, self) => {
         }
 
         // Log if the win streak is greater than 4
-        if (type === "win" && length > 4 && isAutoGambaOn === true) {
+        if (type === "win" && length > 4 && isAutoGambaOn === true && isAutoGamba2On===false) {
           console.log(
-            `-----------Im having a winstreak of ${[length]}-------------`
+            `-----------Im having a winstreak of ${[length]}, increasing risk to 20%-------------`
           );
           isWinstreak = true;
           //clearAllBetIntervals();
@@ -638,14 +659,25 @@ client1.on("message", async (channel, userstate, message, self) => {
     clearInterval(intervalBet);
     clearInterval(intervalBillionairBet);
   }
+  if (message === "!streakreset" && username === "fathai95") {
+    console.log("-------------Resetting streaks-----------------");
 
-if (message==="!spinon" && username==="fathai95"){
-  isAutoSpinOn = true;
-  console.log("Auto spin is on");
-} else if (message==="!spinoff" && username==="fathai95"){
-  isAutoSpinOn=false;
-  console.log("Auto spin is off");
-}
+    wins = 0;
+    losses = 0;
+
+    for (let i = 2; i <= 15; i++) {
+      streaks.win[i] = 0;
+      streaks.loss[i] = 0;
+    }
+  }
+
+  if (message === "!spinon" && username === "fathai95") {
+    isAutoSpinOn = true;
+    console.log("Auto spin is on");
+  } else if (message === "!spinoff" && username === "fathai95") {
+    isAutoSpinOn = false;
+    console.log("Auto spin is off");
+  }
 
   function riskAmount(amount) {
     clearAllBetIntervals();
@@ -665,7 +697,10 @@ if (message==="!spinon" && username==="fathai95"){
         // Check if the amount is a percentage
         if (typeof amount === "string" && amount.includes("%")) {
           sendMessage("minionrpg", `!risk ${amount}`);
-        } else if (typeof amount === "string" && amount.includes("k")) {
+        } else if (
+          typeof amount === "string" &&
+          (amount.includes("k") || amount.includes("m") || amount.includes("b"))
+        ) {
           sendMessage("minionrpg", `!risk ${amount}`);
         } else {
           sendMessage("minionrpg", `!risk ${amount}m`);
